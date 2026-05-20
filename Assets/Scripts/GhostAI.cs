@@ -1,0 +1,96 @@
+using UnityEngine;
+
+public class GhostAI : MonoBehaviour
+{
+    [Header("Joueur")]
+    [SerializeField] private Transform player;
+
+    [Header("Détection")]
+    [SerializeField] private float detectionRange = 6f;
+    [SerializeField] private float stopChaseRange = 9f;
+
+    [Header("Mouvement")]
+    [SerializeField] private float moveSpeed = 2f;
+    [SerializeField] private float returnSpeed = 2f;
+
+    [Header("Knockback")]
+    [SerializeField] private float knockbackDuration = 0.3f;
+
+    private Rigidbody2D rb;
+    private Vector3 spawnPosition;
+    private bool isChasing = false;
+    private float knockbackTimer = 0f;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        spawnPosition = transform.position;
+    }
+
+    void Update()
+    {
+        if (knockbackTimer > 0f)
+        {
+            knockbackTimer -= Time.deltaTime;
+            return;
+        }
+
+        if (player == null) return;
+
+        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+
+        if (!isChasing && distanceToPlayer <= detectionRange)
+        {
+            isChasing = true;
+        }
+
+        if (isChasing && distanceToPlayer >= stopChaseRange)
+        {
+            isChasing = false;
+        }
+
+        if (isChasing)
+        {
+            FollowPlayer();
+        }
+        else
+        {
+            ReturnToSpawn();
+        }
+    }
+
+    void FollowPlayer()
+    {
+        Vector2 direction = (player.position - transform.position).normalized;
+        rb.linearVelocity = direction * moveSpeed;
+    }
+
+    void ReturnToSpawn()
+    {
+        float distanceToSpawn = Vector2.Distance(transform.position, spawnPosition);
+
+        if (distanceToSpawn <= 0.1f)
+        {
+            rb.linearVelocity = Vector2.zero;
+            transform.position = spawnPosition;
+            return;
+        }
+
+        Vector2 direction = (spawnPosition - transform.position).normalized;
+        rb.linearVelocity = direction * returnSpeed;
+    }
+
+    public void Knockback(Vector2 direction, float force)
+    {
+        knockbackTimer = knockbackDuration;
+        rb.linearVelocity = direction.normalized * force;
+    }
+
+    public void ResetGhost()
+    {
+        isChasing = false;
+        knockbackTimer = 0f;
+        rb.linearVelocity = Vector2.zero;
+        transform.position = spawnPosition;
+    }
+}
