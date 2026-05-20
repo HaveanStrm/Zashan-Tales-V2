@@ -1,37 +1,44 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
-
 
 public class MainMenu : MonoBehaviour
 {
-    [Header("Nom de la scène du Hub")]
+    [Header("Scène")]
     [SerializeField] private string hubSceneName = "Hub";
-    [SerializeField] private GameObject SettingsPanel;
 
-    // Bouton JOUER
+    [Header("Panels")]
+    [SerializeField] private GameObject tarotMenuPanel;
+    [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private GameObject creditsPanel;
+
     public void PlayGame()
     {
         SceneManager.LoadScene(hubSceneName);
     }
 
-    // Bouton SETTINGS (pour plus tard)
     public void OpenSettings()
     {
-        SettingsPanel.SetActive(true);
+        settingsPanel.SetActive(true);
     }
 
-    // Bouton CREDITS
+    public void CloseSettings()
+    {
+        settingsPanel.SetActive(false);
+    }
+
     public void OpenCredits()
     {
-        Debug.Log("Menu Crédits (à faire)");
+        creditsPanel.SetActive(true);
     }
 
-    // Bouton QUITTER
+    public void CloseCredits()
+    {
+        creditsPanel.SetActive(false);
+    }
+
     public void QuitGame()
     {
         Debug.Log("Quitter le jeu");
-
         Application.Quit();
     }
 }
