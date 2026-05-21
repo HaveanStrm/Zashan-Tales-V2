@@ -19,6 +19,12 @@ public class PlayerController : MonoBehaviour
     [Header("Plateforme traversable")]
     [SerializeField] private float fallThroughTime = 0.75f;
 
+    [Header("Knockback")]
+    [SerializeField] private float knockbackForce = 8f;
+    [SerializeField] private float knockbackDuration = 0.2f;
+
+    private bool isKnockedBack = false;
+
     private Rigidbody2D rb;
     private Animator animator;
     private Collider2D playerCollider;
@@ -42,9 +48,9 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        
+        if (isKnockedBack) return;
 
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        isGrounded = CheckGrounded();
 
         Move();
         Jump();
@@ -65,10 +71,24 @@ public class PlayerController : MonoBehaviour
 
     void Jump()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && jumpCount < maxJumps && !isPreparingJump && !isDroppingThroughPlatform)
+        if (Input.GetKeyDown(KeyCode.Space) && jumpCount < maxJumps && !isPreparingJump)
         {
+            if (!isGrounded && jumpCount == 0)
+            {
+                jumpCount = 1;
+            }
+
             StartCoroutine(PrepareJump());
         }
+    }
+
+    bool CheckGrounded()
+    {
+        return Physics2D.OverlapCircle(
+            groundCheck.position,
+            groundCheckRadius,
+            groundLayer
+        );
     }
 
     void Dash()
@@ -177,9 +197,36 @@ public class PlayerController : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Ground") || collision.gameObject.CompareTag("OneWayPlatform"))
+        if (collision.gameObject.CompareTag("Ground"))
         {
             jumpCount = 0;
         }
+
+        if (collision.gameObject.CompareTag("OneWayPlatform"))
+        {
+            if (rb.linearVelocity.y <= 0.1f)
+            {
+                jumpCount = 0;
+            }
+        }
+    }
+
+    public void ApplyKnockback(Vector2 sourcePosition)
+    {
+        StartCoroutine(KnockbackCoroutine(sourcePosition));
+    }
+
+    IEnumerator KnockbackCoroutine(Vector2 sourcePosition)
+    {
+        isKnockedBack = true;
+
+        Vector2 direction = ((Vector2)transform.position - sourcePosition).normalized;
+
+        rb.linearVelocity = Vector2.zero;
+        rb.AddForce(direction * knockbackForce, ForceMode2D.Impulse);
+
+        yield return new WaitForSeconds(knockbackDuration);
+
+        isKnockedBack = false;
     }
 }

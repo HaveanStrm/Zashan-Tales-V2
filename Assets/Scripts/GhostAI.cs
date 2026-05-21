@@ -15,14 +15,17 @@ public class GhostAI : MonoBehaviour
 
     [Header("Knockback")]
     [SerializeField] private float knockbackDuration = 0.3f;
+    [SerializeField] private int contactDamage = 1;
 
     private Rigidbody2D rb;
     private Vector3 spawnPosition;
     private bool isChasing = false;
     private float knockbackTimer = 0f;
+    private Vector3 originalScale;
 
     void Start()
     {
+        originalScale = transform.localScale;
         rb = GetComponent<Rigidbody2D>();
         spawnPosition = transform.position;
     }
@@ -63,6 +66,23 @@ public class GhostAI : MonoBehaviour
     {
         Vector2 direction = (player.position - transform.position).normalized;
         rb.linearVelocity = direction * moveSpeed;
+
+        if (direction.x > 0)
+        {
+            transform.localScale = new Vector3(
+                Mathf.Abs(originalScale.x),
+                originalScale.y,
+                originalScale.z
+            );
+        }
+        else if (direction.x < 0)
+        {
+            transform.localScale = new Vector3(
+                -Mathf.Abs(originalScale.x),
+                originalScale.y,
+                originalScale.z
+            );
+        }
     }
 
     void ReturnToSpawn()
@@ -95,6 +115,25 @@ public class GhostAI : MonoBehaviour
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (!collision.gameObject.CompareTag("Player")) return;
+
+        PlayerHealth playerHealth = collision.gameObject.GetComponent<PlayerHealth>();
+
+        if (playerHealth != null)
+        {
+            playerHealth.TakeDamage(contactDamage);
+        }
+
+        PlayerController playerController = collision.gameObject.GetComponent<PlayerController>();
+
+        if (playerController != null)
+        {
+            playerController.ApplyKnockback(transform.position);
         }
     }
 }

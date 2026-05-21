@@ -3,30 +3,33 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
-    [Header("Points de vie")]
+    [Header("Vie")]
     [SerializeField] private int maxHealth = 3;
     private int currentHealth;
 
-    [Header("Nombre de vies")]
+    [Header("Vies")]
     [SerializeField] private int maxLives = 3;
     private int currentLives;
 
-    [Header("Checkpoints")]
+    [Header("Checkpoint")]
     [SerializeField] private Transform levelSpawn;
     private Transform currentCheckpoint;
-
-    [Header("Ennemis")]
-    [SerializeField] private GameObject enemiesParent;
-
-    [Header("Invincibilité")]
-    [SerializeField] private float invincibilityTime = 2f;
-    [SerializeField] private float blinkSpeed = 0.1f;
 
     [Header("UI")]
     [SerializeField] private UIManager uiManager;
 
     [Header("Game Over")]
     [SerializeField] private GameOverManager gameOverManager;
+
+    [Header("Ennemis")]
+    [SerializeField] private GameObject enemiesParent;
+
+    [Header("Background")]
+    [SerializeField] private BackgroundChanger backgroundChanger;
+
+    [Header("Invincibilité")]
+    [SerializeField] private float invincibilityTime = 2f;
+    [SerializeField] private float blinkSpeed = 0.1f;
 
     private bool isInvincible = false;
     private bool isShielded = false;
@@ -74,6 +77,7 @@ public class PlayerHealth : MonoBehaviour
         isRespawning = true;
 
         currentHealth--;
+
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
         uiManager.UpdateHealth(currentHealth);
@@ -98,7 +102,15 @@ public class PlayerHealth : MonoBehaviour
     void LoseLife()
     {
         currentLives--;
+
         uiManager.UpdateLives(currentLives);
+
+        if (backgroundChanger != null)
+        {
+            backgroundChanger.ResetBackground();
+        }
+
+        ResetAllGhosts();
 
         if (currentLives <= 0)
         {
@@ -115,8 +127,6 @@ public class PlayerHealth : MonoBehaviour
 
     void RespawnAtCheckpoint(bool refillHealth)
     {
-        ResetAllGhosts();
-
         if (currentCheckpoint != null)
         {
             transform.position = currentCheckpoint.position;
@@ -134,24 +144,6 @@ public class PlayerHealth : MonoBehaviour
         uiManager.UpdateHealth(currentHealth);
 
         StartCoroutine(Invincibility());
-    }
-
-    void RestartLevelFromSpawn()
-    {
-        ResetAllGhosts();
-
-        currentLives = maxLives;
-        currentHealth = maxHealth;
-
-        currentCheckpoint = levelSpawn;
-
-        if (levelSpawn != null)
-        {
-            transform.position = levelSpawn.position;
-        }
-
-        uiManager.UpdateLives(currentLives);
-        uiManager.UpdateHealth(currentHealth);
     }
 
     public void SetCheckpoint(Transform newCheckpoint)
@@ -173,12 +165,14 @@ public class PlayerHealth : MonoBehaviour
             enemy.gameObject.SetActive(true);
 
             GhostAI ghostAI = enemy.GetComponent<GhostAI>();
+
             if (ghostAI != null)
             {
                 ghostAI.ResetGhost();
             }
 
             GhostHealth ghostHealth = enemy.GetComponent<GhostHealth>();
+
             if (ghostHealth != null)
             {
                 ghostHealth.ResetHealth();
@@ -195,15 +189,18 @@ public class PlayerHealth : MonoBehaviour
         while (timer < invincibilityTime)
         {
             SetPlayerVisible(false);
+
             yield return new WaitForSeconds(blinkSpeed);
 
             SetPlayerVisible(true);
+
             yield return new WaitForSeconds(blinkSpeed);
 
             timer += blinkSpeed * 2f;
         }
 
         SetPlayerVisible(true);
+
         isInvincible = false;
     }
 

@@ -3,15 +3,12 @@ using UnityEngine;
 public class BackgroundChanger : MonoBehaviour
 {
     private SpriteRenderer spriteRenderer;
+    private Sprite startingBackground;
 
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-    }
-
-    void Update()
-    {
-
+        startingBackground = spriteRenderer.sprite;
     }
 
     public void ChangeBackground(Sprite newBackground)
@@ -19,5 +16,10 @@ public class BackgroundChanger : MonoBehaviour
         if (newBackground == null) return;
 
         spriteRenderer.sprite = newBackground;
+    }
+
+    public void ResetBackground()
+    {
+        spriteRenderer.sprite = startingBackground;
     }
 }

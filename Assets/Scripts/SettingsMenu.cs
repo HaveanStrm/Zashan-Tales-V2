@@ -1,31 +1,54 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 public class SettingsMenu : MonoBehaviour
 {
-    [Header("UI")]
+    [Header("Volume")]
     [SerializeField] private Slider volumeSlider;
+
+    [Header("Résolution")]
     [SerializeField] private TMP_Dropdown resolutionDropdown;
-    [SerializeField] private TMP_Dropdown languageDropdown;
+
+    [Header("Plein écran")]
     [SerializeField] private Toggle fullscreenToggle;
-    [SerializeField] private GameObject creditsPanel;
 
     private Resolution[] resolutions;
 
     void Start()
     {
-        
-        float savedVolume = PlayerPrefs.GetFloat("volume", 1f);
-        volumeSlider.value = savedVolume;
-        SetVolume(savedVolume);
+        SetupVolume();
+        SetupResolutions();
+        SetupFullscreen();
+    }
 
-        
+    void Update()
+    {
+
+    }
+
+    void SetupVolume()
+    {
+        float savedVolume = PlayerPrefs.GetFloat("Volume", 1f);
+
+        if (volumeSlider != null)
+        {
+            volumeSlider.value = savedVolume;
+        }
+
+        AudioListener.volume = savedVolume;
+    }
+
+    void SetupResolutions()
+    {
+        if (resolutionDropdown == null) return;
+
         resolutions = Screen.resolutions;
         resolutionDropdown.ClearOptions();
 
-        var options = new System.Collections.Generic.List<string>();
-        int currentIndex = 0;
+        List<string> options = new List<string>();
+        int currentResolutionIndex = 0;
 
         for (int i = 0; i < resolutions.Length; i++)
         {
@@ -35,69 +58,44 @@ public class SettingsMenu : MonoBehaviour
             if (resolutions[i].width == Screen.currentResolution.width &&
                 resolutions[i].height == Screen.currentResolution.height)
             {
-                currentIndex = i;
+                currentResolutionIndex = i;
             }
         }
 
         resolutionDropdown.AddOptions(options);
-        resolutionDropdown.value = currentIndex;
+        resolutionDropdown.value = currentResolutionIndex;
         resolutionDropdown.RefreshShownValue();
-
-        
-        fullscreenToggle.isOn = Screen.fullScreen;
-
-       
-        languageDropdown.value = PlayerPrefs.GetInt("language", 0);
     }
 
-    void Update()
+    void SetupFullscreen()
     {
-
+        if (fullscreenToggle != null)
+        {
+            fullscreenToggle.isOn = Screen.fullScreen;
+        }
     }
 
-   
     public void SetVolume(float volume)
     {
         AudioListener.volume = volume;
-        PlayerPrefs.SetFloat("volume", volume);
+        PlayerPrefs.SetFloat("Volume", volume);
     }
 
-    
-    public void SetResolution(int index)
+    public void SetResolution(int resolutionIndex)
     {
-        Resolution res = resolutions[index];
-        Screen.SetResolution(res.width, res.height, Screen.fullScreen);
+        if (resolutions == null || resolutions.Length == 0) return;
+
+        Resolution resolution = resolutions[resolutionIndex];
+
+        Screen.SetResolution(
+            resolution.width,
+            resolution.height,
+            Screen.fullScreen
+        );
     }
 
-    
     public void SetFullscreen(bool isFullscreen)
     {
         Screen.fullScreen = isFullscreen;
-    }
-
-  
-    public void SetLanguage(int index)
-    {
-        PlayerPrefs.SetInt("language", index);
-
-        if (index == 0)
-            Debug.Log("Français");
-        else
-            Debug.Log("English");
-    }
-
-   
-    public void CloseSettings(GameObject panel)
-    {
-        panel.SetActive(false);
-    }
-
-    public void OpenCredits()
-    {
-        creditsPanel.SetActive(true);
-    }
-    public void CloseCredits()
-    {
-        creditsPanel.SetActive(false);
     }
 }
