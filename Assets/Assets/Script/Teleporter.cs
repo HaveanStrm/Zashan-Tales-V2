@@ -8,6 +8,9 @@ public class Teleporter : MonoBehaviour
     [Header("Temps avant réutilisation")]
     [SerializeField] private float cooldown = 0.5f;
 
+    [SerializeField] private BackgroundChanger backgroundChanger;
+    [SerializeField] private Sprite newBackground;
+
     private bool canTeleport = true;
 
     void Start()
@@ -51,8 +54,12 @@ public class Teleporter : MonoBehaviour
 
         player.transform.position = destination.position;
 
-        canTeleport = false;
+        if (backgroundChanger != null && newBackground != null)
+        {
+            backgroundChanger.ChangeBackground(newBackground);
+        }
 
+        canTeleport = false;
         Invoke(nameof(ResetTeleport), cooldown);
     }
 

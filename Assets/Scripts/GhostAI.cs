@@ -90,7 +90,11 @@ public class GhostAI : MonoBehaviour
     {
         isChasing = false;
         knockbackTimer = 0f;
-        rb.linearVelocity = Vector2.zero;
         transform.position = spawnPosition;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+        }
     }
 }

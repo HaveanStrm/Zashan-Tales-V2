@@ -15,6 +15,9 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private Transform levelSpawn;
     private Transform currentCheckpoint;
 
+    [Header("Ennemis")]
+    [SerializeField] private GameObject enemiesParent;
+
     [Header("Invincibilité")]
     [SerializeField] private float invincibilityTime = 2f;
     [SerializeField] private float blinkSpeed = 0.1f;
@@ -22,12 +25,14 @@ public class PlayerHealth : MonoBehaviour
     [Header("UI")]
     [SerializeField] private UIManager uiManager;
 
-    private bool isInvincible = false;
-    private SpriteRenderer[] spriteRenderers;
-    private bool isShielded = false;
-
+    [Header("Game Over")]
     [SerializeField] private GameOverManager gameOverManager;
 
+    private bool isInvincible = false;
+    private bool isShielded = false;
+    private bool isRespawning = false;
+
+    private SpriteRenderer[] spriteRenderers;
 
     void Start()
     {
@@ -38,21 +43,15 @@ public class PlayerHealth : MonoBehaviour
 
         spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
 
-        uiManager.UpdateLives(currentLives);
         uiManager.UpdateHealth(currentHealth);
-    }
-
-    void Update()
-    {
-
+        uiManager.UpdateLives(currentLives);
     }
 
     public void TakeDamage(int damage)
     {
-        Debug.Log("TakeDamage appelé. Shield = " + isShielded);
-
         if (isShielded) return;
         if (isInvincible) return;
+        if (isRespawning) return;
 
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
@@ -68,27 +67,69 @@ public class PlayerHealth : MonoBehaviour
         StartCoroutine(Invincibility());
     }
 
+    public void FallDamage()
+    {
+        if (isRespawning) return;
+
+        isRespawning = true;
+
+        currentHealth--;
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+        uiManager.UpdateHealth(currentHealth);
+
+        if (currentHealth <= 0)
+        {
+            LoseLife();
+        }
+        else
+        {
+            RespawnAtCheckpoint(false);
+        }
+
+        Invoke(nameof(EndRespawn), 0.3f);
+    }
+
+    void EndRespawn()
+    {
+        isRespawning = false;
+    }
+
     void LoseLife()
     {
         currentLives--;
-
         uiManager.UpdateLives(currentLives);
 
         if (currentLives <= 0)
         {
-            gameOverManager.ShowGameOver();
+            if (gameOverManager != null)
+            {
+                gameOverManager.ShowGameOver();
+            }
+
+            return;
         }
-        else
-        {
-            RespawnAtCheckpoint();
-        }
+
+        RespawnAtCheckpoint(true);
     }
 
-    void RespawnAtCheckpoint()
+    void RespawnAtCheckpoint(bool refillHealth)
     {
         ResetAllGhosts();
 
-        transform.position = currentCheckpoint.position;
+        if (currentCheckpoint != null)
+        {
+            transform.position = currentCheckpoint.position;
+        }
+        else if (levelSpawn != null)
+        {
+            transform.position = levelSpawn.position;
+        }
+
+        if (refillHealth)
+        {
+            currentHealth = maxHealth;
+        }
 
         uiManager.UpdateHealth(currentHealth);
 
@@ -103,7 +144,11 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
 
         currentCheckpoint = levelSpawn;
-        transform.position = levelSpawn.position;
+
+        if (levelSpawn != null)
+        {
+            transform.position = levelSpawn.position;
+        }
 
         uiManager.UpdateLives(currentLives);
         uiManager.UpdateHealth(currentHealth);
@@ -117,6 +162,28 @@ public class PlayerHealth : MonoBehaviour
     public void SetShielded(bool value)
     {
         isShielded = value;
+    }
+
+    void ResetAllGhosts()
+    {
+        if (enemiesParent == null) return;
+
+        foreach (Transform enemy in enemiesParent.transform)
+        {
+            enemy.gameObject.SetActive(true);
+
+            GhostAI ghostAI = enemy.GetComponent<GhostAI>();
+            if (ghostAI != null)
+            {
+                ghostAI.ResetGhost();
+            }
+
+            GhostHealth ghostHealth = enemy.GetComponent<GhostHealth>();
+            if (ghostHealth != null)
+            {
+                ghostHealth.ResetHealth();
+            }
+        }
     }
 
     IEnumerator Invincibility()
@@ -144,7 +211,10 @@ public class PlayerHealth : MonoBehaviour
     {
         foreach (SpriteRenderer sr in spriteRenderers)
         {
-            sr.enabled = visible;
+            if (sr != null)
+            {
+                sr.enabled = visible;
+            }
         }
     }
 
@@ -161,33 +231,6 @@ public class PlayerHealth : MonoBehaviour
         if (other.CompareTag("Enemy"))
         {
             TakeDamage(1);
-        }
-    }
-
-    void ResetAllGhosts()
-    {
-        GhostAI[] ghosts = FindObjectsByType<GhostAI>(FindObjectsSortMode.None);
-
-        foreach (GhostAI ghost in ghosts)
-        {
-            ghost.ResetGhost();
-        }
-    }
-
-    public void FallDamage()
-    {
-        currentHealth--;
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-
-        uiManager.UpdateHealth(currentHealth);
-
-        if (currentHealth <= 0)
-        {
-            LoseLife();
-        }
-        else
-        {
-            RespawnAtCheckpoint();
         }
     }
 }

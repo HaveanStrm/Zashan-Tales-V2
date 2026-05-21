@@ -2,28 +2,27 @@ using UnityEngine;
 
 public class GhostHealth : MonoBehaviour
 {
-    [SerializeField] private int health = 1;
-    [SerializeField] private GameObject deathParticles;
+    [SerializeField] private int maxHealth = 1;
+
+    private int currentHealth;
 
     void Start()
     {
-
-    }
-
-    void Update()
-    {
-
+        currentHealth = maxHealth;
     }
 
     public void TakeDamage(int damage)
     {
-        health -= damage;
+        currentHealth -= damage;
 
-        if (health <= 0)
+        if (currentHealth <= 0)
         {
-            Instantiate(deathParticles, transform.position, Quaternion.identity);
-
-            Destroy(gameObject);
+            gameObject.SetActive(false);
         }
+    }
+
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
     }
 }
